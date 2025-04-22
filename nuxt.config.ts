@@ -2,35 +2,34 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
-  modules: [
-    '@pinia/nuxt',
-    '@nuxtjs/tailwindcss'
-  ],
+  modules: ["@pinia/nuxt", "@nuxtjs/tailwindcss"],
 
   app: {
     head: {
-      title: 'SovnGarde - Game Development Community',
+      title: "SovnGarde - Game Development Community",
       meta: [
-        { name: 'description', content: 'Where game developers share, connect, and grow together' }
+        {
+          name: "description",
+          content: "Where game developers share, connect, and grow together",
+        },
       ],
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
-      ]
-    }
+      link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
+    },
+    baseURL: "/sovngarde-ui/",
   },
 
   runtimeConfig: {
     public: {
-      apiUrl: process.env.API_URL || 'http://localhost:3001',
-      orgId: process.env.ORG_ID || 'default-org-id'
-    }
+      apiUrl: process.env.API_URL || "http://localhost:3001",
+      orgId: process.env.ORG_ID || "default-org-id",
+    },
   },
 
-  css: ['~/assets/css/main.css'],
+  css: ["~/assets/css/main.css"],
 
   pinia: {
-    autoImports: ['defineStore', 'acceptHMRUpdate']
+    autoImports: ["defineStore", "acceptHMRUpdate"],
   },
 
-  compatibilityDate: '2025-04-22'
+  compatibilityDate: "2025-04-22",
 })
