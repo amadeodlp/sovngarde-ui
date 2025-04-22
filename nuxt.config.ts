@@ -7,15 +7,20 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: "SovnGarde - Game Development Community",
+      link: [
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap",
+        },
+        { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+      ],
       meta: [
         {
           name: "description",
           content: "Where game developers share, connect, and grow together",
         },
       ],
-      link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
     },
-    baseURL: "/sovngarde-ui/",
   },
 
   runtimeConfig: {

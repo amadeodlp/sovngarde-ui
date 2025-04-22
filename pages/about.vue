@@ -42,7 +42,7 @@
       <div class="flex justify-center">
         <div class="text-center max-w-md">
           <div class="w-32 h-32 rounded-full bg-neutral-800 mx-auto mb-4 overflow-hidden">
-            <img src="../assets/amadeo.jpg" alt="Founder" class="w-full h-full object-cover" />
+            <img src="/amadeo.jpg" alt="Founder" class="w-full h-full object-cover" />
           </div>
           <h3 class="text-xl font-bold text-white mb-1">Amadeo de la Peña</h3>
           <p class="text-primary font-medium mb-2">Founder & CEO</p>
