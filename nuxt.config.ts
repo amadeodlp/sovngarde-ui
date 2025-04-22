@@ -21,6 +21,7 @@ export default defineNuxtConfig({
         },
       ],
     },
+    baseURL: "/sovngarde-ui/",
   },
 
   runtimeConfig: {
