@@ -1,10 +1,10 @@
 <template>
   <div class="min-h-screen flex items-center justify-center py-12 px-4">
-    <div class="max-w-md w-full">
+    <div class="max-w-md w-full mt-12">
       <div class="text-center mb-8">
-        <NuxtLink to="/" class="text-3xl font-bold text-white">
-          Game<span class="text-primary">Hub</span>
-        </NuxtLink>
+        <NuxtLink to="/" class="text-2xl font-bold text-white font-nordic">
+            <span class="text-primary">Sovn</span>Garde
+          </NuxtLink>
         <h2 class="mt-6 text-3xl font-bold text-white">Sign in to your account</h2>
         <p class="mt-2 text-white/70">
           Or <NuxtLink to="/signup" class="text-primary hover:text-primary/80">create a new account</NuxtLink>

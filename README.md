@@ -1,7 +1,5 @@
 # SovnGarde
 
-![SovnGarde Logo](public/logo.png)
-
 SovnGarde is a platform for game developers to showcase their work, connect with players, and build communities around their games. Named after the Hall of Valor from The Elder Scrolls V: Skyrim, SovnGarde provides a place where creative developers can share their projects and connect with their audience.
 
 ## Features
