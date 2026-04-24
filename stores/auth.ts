@@ -43,7 +43,7 @@ export const useAuthStore = defineStore('auth', {
           email: payload.email,
           password: payload.password,
           options: {
-            data: { username: payload.username },
+            data: { username: payload.username, app_name: 'SovnGarde' },
             emailRedirectTo: 'https://sovngarde.social',
           },
         })
