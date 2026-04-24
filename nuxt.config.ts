@@ -26,8 +26,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiUrl: process.env.API_URL || "http://localhost:3001",
-      orgId: process.env.ORG_ID || "default-org-id",
+      supabaseUrl: process.env.SUPABASE_URL || "",
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || "",
     },
   },
 

@@ -1,57 +1,91 @@
-import { defineStore } from 'pinia';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import { defineStore } from 'pinia'
 
 export interface AuthState {
-  isAuthenticated: boolean;
-  username: string;
-  userType: string; // 'developer' or 'gamer'
-  error: string | null;
+  isAuthenticated: boolean
+  userId: string
+  username: string
+  displayName: string
+  avatarUrl: string
+  error: string | null
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     isAuthenticated: false,
+    userId: '',
     username: '',
-    userType: '',
-    error: null
+    displayName: '',
+    avatarUrl: '',
+    error: null,
   }),
-  
-  getters: {
-    isDeveloper: (state) => state.userType === 'developer',
-    isGamer: (state) => state.userType === 'gamer',
-  },
-  
+
   actions: {
-    async login(credentials: { username: string; password: string }) {
+    async login(credentials: { email: string; password: string }) {
+      const { $supabase } = useNuxtApp()
+      this.error = null
       try {
-        const response = await axios.post('/api/login', credentials);
-        if (response.status === 200) {
-          this.isAuthenticated = true;
-          this.username = credentials.username;
-          this.userType = response.data.userType;
-          this.error = null;
-        }
-      } catch (error) {
-        this.error = 'Invalid credentials';
+        const { data, error } = await ($supabase as any).auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        })
+        if (error) throw error
+        await this._loadProfile(data.user.id)
+      } catch (err: any) {
+        this.error = err.message || 'Invalid credentials'
       }
     },
-    
+
+    async signup(payload: { email: string; password: string; username: string }) {
+      const { $supabase } = useNuxtApp()
+      this.error = null
+      try {
+        const { data, error } = await ($supabase as any).auth.signUp({
+          email: payload.email,
+          password: payload.password,
+          options: { data: { username: payload.username } },
+        })
+        if (error) throw error
+        await ($supabase as any).from('profiles').update({
+          display_name: payload.username,
+        }).eq('id', data.user.id)
+        await this._loadProfile(data.user.id)
+      } catch (err: any) {
+        this.error = err.message || 'Signup failed'
+      }
+    },
+
     async logout() {
-      try {
-        await axios.post('/api/logout');
-      } catch (error) {
-        console.error('Logout failed:', error);
-      } finally {
-        this.isAuthenticated = false;
-        this.username = '';
-        this.userType = '';
-        Cookies.remove('auth-token');
+      const { $supabase } = useNuxtApp()
+      await ($supabase as any).auth.signOut()
+      this.$reset()
+    },
+
+    async restoreSession() {
+      const { $supabase } = useNuxtApp()
+      const { data } = await ($supabase as any).auth.getSession()
+      if (data.session?.user) {
+        await this._loadProfile(data.session.user.id)
       }
     },
-    
+
+    async _loadProfile(userId: string) {
+      const { $supabase } = useNuxtApp()
+      const { data: profile } = await ($supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (profile) {
+        this.isAuthenticated = true
+        this.userId      = userId
+        this.username    = profile.username     || ''
+        this.displayName = profile.display_name || profile.username || ''
+        this.avatarUrl   = profile.avatar_url   || ''
+      }
+    },
+
     clearError() {
-      this.error = null;
-    }
-  }
-});
+      this.error = null
+    },
+  },
+})

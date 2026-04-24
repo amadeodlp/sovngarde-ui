@@ -1,60 +1,56 @@
-import { defineStore } from 'pinia';
-import axios from 'axios';
-import Cookies from 'js-cookie';
-import { useAuthStore } from './auth';
+import { defineStore } from 'pinia'
+import { useAuthStore } from './auth'
 
 export interface ForumPost {
-  id: string;
-  title: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  createdAt: string;
-  updatedAt: string;
-  categoryId: string;
-  categoryName: string;
-  tags: string[];
-  likes: number;
-  commentCount: number;
-  isPinned: boolean;
-  isLocked: boolean;
-  isAnnouncement: boolean;
+  id: string
+  title: string
+  content: string
+  author_id: string
+  author_name: string
+  author_avatar?: string
+  created_at: string
+  updated_at: string
+  category_id: string
+  tags: string[]
+  likes: number
+  comment_count: number
+  is_pinned: boolean
+  is_locked: boolean
+  is_announcement: boolean
 }
 
 export interface ForumComment {
-  id: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar?: string;
-  createdAt: string;
-  updatedAt: string;
-  postId: string;
-  parentCommentId?: string;
-  likes: number;
-  isEdited: boolean;
+  id: string
+  content: string
+  author_id: string
+  author_name: string
+  author_avatar?: string
+  created_at: string
+  post_id: string
+  parent_comment_id?: string
+  likes: number
+  is_edited: boolean
 }
 
 export interface ForumCategory {
-  id: string;
-  name: string;
-  description: string;
-  icon?: string;
-  color?: string;
-  parentCategoryId?: string;
-  postCount: number;
-  lastActivity?: string;
+  id: string
+  name: string
+  description: string
+  icon?: string
+  color?: string
+  parent_category_id?: string
+  post_count: number
+  last_activity?: string
 }
 
 export interface CommunityState {
-  posts: ForumPost[];
-  popularPosts: ForumPost[];
-  currentPost: ForumPost | null;
-  postComments: ForumComment[];
-  categories: ForumCategory[];
-  isLoading: boolean;
-  error: string | null;
+  posts: ForumPost[]
+  popularPosts: ForumPost[]
+  currentPost: ForumPost | null
+  postComments: ForumComment[]
+  categories: ForumCategory[]
+  isLoading: boolean
+  error: string | null
 }
 
 export const useCommunityStore = defineStore('community', {
@@ -67,481 +63,176 @@ export const useCommunityStore = defineStore('community', {
     isLoading: false,
     error: null,
   }),
-  
+
   getters: {
-    categoryMap: (state) => {
-      const map: Record<string, ForumCategory> = {};
-      state.categories.forEach(category => {
-        map[category.id] = category;
-      });
-      return map;
-    },
-    
-    announcementPosts: (state) => {
-      return state.posts.filter(post => post.isAnnouncement);
-    },
-    
-    pinnedPosts: (state) => {
-      return state.posts.filter(post => post.isPinned && !post.isAnnouncement);
-    },
-    
-    regularPosts: (state) => {
-      return state.posts.filter(post => !post.isPinned && !post.isAnnouncement);
-    },
+    announcementPosts: (state) => state.posts.filter(p => p.is_announcement),
+    pinnedPosts:       (state) => state.posts.filter(p => p.is_pinned && !p.is_announcement),
+    regularPosts:      (state) => state.posts.filter(p => !p.is_pinned && !p.is_announcement),
   },
-  
+
   actions: {
     async fetchCategories() {
-      this.isLoading = true;
-      this.error = null;
-      
+      const { $supabase } = useNuxtApp()
+      this.isLoading = true
       try {
-        const response = await axios.get(
-          `${useRuntimeConfig().public.apiUrl}/forum/categories`
-        );
-        
-        if (response.status === 200) {
-          this.categories = response.data.categories;
-        }
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to fetch categories';
-        console.error('Error fetching categories:', error);
+        const { data, error } = await ($supabase as any)
+          .from('forum_categories')
+          .select('*')
+          .order('name')
+        if (error) throw error
+        this.categories = data || []
+      } catch (err: any) {
+        this.error = 'Failed to fetch categories'
       } finally {
-        this.isLoading = false;
+        this.isLoading = false
       }
     },
-    
+
     async fetchPosts(categoryId?: string) {
-      this.isLoading = true;
-      this.error = null;
-      
+      const { $supabase } = useNuxtApp()
+      this.isLoading = true
       try {
-        const url = categoryId 
-          ? `${useRuntimeConfig().public.apiUrl}/forum/categories/${categoryId}/posts`
-          : `${useRuntimeConfig().public.apiUrl}/forum/posts`;
-          
-        const response = await axios.get(url);
-        
-        if (response.status === 200) {
-          this.posts = response.data.posts;
-        }
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to fetch posts';
-        console.error('Error fetching posts:', error);
+        let query = ($supabase as any)
+          .from('forum_posts')
+          .select('*')
+          .order('is_pinned', { ascending: false })
+          .order('created_at', { ascending: false })
+        if (categoryId) query = query.eq('category_id', categoryId)
+        const { data, error } = await query
+        if (error) throw error
+        this.posts = data || []
+      } catch (err: any) {
+        this.error = 'Failed to fetch posts'
       } finally {
-        this.isLoading = false;
+        this.isLoading = false
       }
     },
-    
+
     async fetchPopularPosts() {
-      this.isLoading = true;
-      this.error = null;
-      
+      const { $supabase } = useNuxtApp()
+      this.isLoading = true
       try {
-        const response = await axios.get(
-          `${useRuntimeConfig().public.apiUrl}/forum/posts/popular`
-        );
-        
-        if (response.status === 200) {
-          this.popularPosts = response.data.posts;
-        }
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to fetch popular posts';
-        console.error('Error fetching popular posts:', error);
+        const { data, error } = await ($supabase as any)
+          .from('forum_posts')
+          .select('*')
+          .order('likes', { ascending: false })
+          .limit(10)
+        if (error) throw error
+        this.popularPosts = data || []
+      } catch (err: any) {
+        this.error = 'Failed to fetch popular posts'
       } finally {
-        this.isLoading = false;
+        this.isLoading = false
       }
     },
-    
+
     async fetchPostDetails(postId: string) {
-      this.isLoading = true;
-      this.error = null;
-      
+      const { $supabase } = useNuxtApp()
+      this.isLoading = true
       try {
-        const response = await axios.get(
-          `${useRuntimeConfig().public.apiUrl}/forum/posts/${postId}`
-        );
-        
-        if (response.status === 200) {
-          this.currentPost = response.data;
-        }
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to fetch post details';
-        console.error('Error fetching post details:', error);
+        const { data, error } = await ($supabase as any)
+          .from('forum_posts')
+          .select('*')
+          .eq('id', postId)
+          .single()
+        if (error) throw error
+        this.currentPost = data
+      } catch (err: any) {
+        this.error = 'Failed to fetch post'
       } finally {
-        this.isLoading = false;
+        this.isLoading = false
       }
     },
-    
+
     async fetchPostComments(postId: string) {
-      this.isLoading = true;
-      this.error = null;
-      
+      const { $supabase } = useNuxtApp()
+      this.isLoading = true
       try {
-        const response = await axios.get(
-          `${useRuntimeConfig().public.apiUrl}/forum/posts/${postId}/comments`
-        );
-        
-        if (response.status === 200) {
-          this.postComments = response.data.comments;
-        }
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to fetch comments';
-        console.error('Error fetching comments:', error);
+        const { data, error } = await ($supabase as any)
+          .from('forum_comments')
+          .select('*')
+          .eq('post_id', postId)
+          .order('created_at', { ascending: true })
+        if (error) throw error
+        this.postComments = data || []
+      } catch (err: any) {
+        this.error = 'Failed to fetch comments'
       } finally {
-        this.isLoading = false;
+        this.isLoading = false
       }
     },
-    
-    async createPost(post: { title: string; content: string; categoryId: string; tags?: string[] }) {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' };
-      
-      this.isLoading = true;
-      this.error = null;
-      
+
+    async createPost(post: { title: string; content: string; category_id: string; tags?: string[] }) {
+      const { $supabase } = useNuxtApp()
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' }
       try {
-        const response = await axios.post(
-          `${useRuntimeConfig().public.apiUrl}/forum/posts`,
-          post,
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('jwt-token')}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-        if (response.status === 201) {
-          return { success: true, postId: response.data.id };
-        }
-        
-        throw new Error('Failed to create post');
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to create post';
-        console.error('Error creating post:', error);
-        return { success: false, error: this.error };
-      } finally {
-        this.isLoading = false;
+        const { data, error } = await ($supabase as any)
+          .from('forum_posts')
+          .insert({ ...post, author_id: authStore.userId, author_name: authStore.displayName })
+          .select()
+          .single()
+        if (error) throw error
+        this.posts.unshift(data)
+        return { success: true, postId: data.id }
+      } catch (err: any) {
+        this.error = 'Failed to create post'
+        return { success: false, error: this.error }
       }
     },
-    
-    async updatePost(postId: string, updates: { title?: string; content?: string; tags?: string[] }) {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' };
-      
-      this.isLoading = true;
-      this.error = null;
-      
+
+    async createComment(comment: { content: string; post_id: string; parent_comment_id?: string }) {
+      const { $supabase } = useNuxtApp()
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' }
       try {
-        const response = await axios.patch(
-          `${useRuntimeConfig().public.apiUrl}/forum/posts/${postId}`,
-          updates,
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('jwt-token')}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-        if (response.status === 200) {
-          if (this.currentPost && this.currentPost.id === postId) {
-            this.currentPost = { ...this.currentPost, ...updates, updatedAt: new Date().toISOString() };
-          }
-          
-          return { success: true };
+        const { data, error } = await ($supabase as any)
+          .from('forum_comments')
+          .insert({ ...comment, author_id: authStore.userId, author_name: authStore.displayName })
+          .select()
+          .single()
+        if (error) throw error
+        this.postComments.push(data)
+        if (this.currentPost?.id === comment.post_id) {
+          this.currentPost = { ...this.currentPost, comment_count: this.currentPost.comment_count + 1 }
         }
-        
-        throw new Error('Failed to update post');
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to update post';
-        console.error('Error updating post:', error);
-        return { success: false, error: this.error };
-      } finally {
-        this.isLoading = false;
+        return { success: true, commentId: data.id }
+      } catch (err: any) {
+        this.error = 'Failed to create comment'
+        return { success: false, error: this.error }
       }
     },
-    
-    async deletePost(postId: string) {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' };
-      
-      this.isLoading = true;
-      this.error = null;
-      
-      try {
-        const response = await axios.delete(
-          `${useRuntimeConfig().public.apiUrl}/forum/posts/${postId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('jwt-token')}`,
-            },
-          }
-        );
-        
-        if (response.status === 200) {
-          this.posts = this.posts.filter(p => p.id !== postId);
-          
-          if (this.currentPost && this.currentPost.id === postId) {
-            this.currentPost = null;
-          }
-          
-          return { success: true };
-        }
-        
-        throw new Error('Failed to delete post');
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to delete post';
-        console.error('Error deleting post:', error);
-        return { success: false, error: this.error };
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    
-    async createComment(comment: { content: string; postId: string; parentCommentId?: string }) {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' };
-      
-      this.isLoading = true;
-      this.error = null;
-      
-      try {
-        const response = await axios.post(
-          `${useRuntimeConfig().public.apiUrl}/forum/comments`,
-          comment,
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('jwt-token')}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-        if (response.status === 201) {
-          // Update local comment list if we're currently viewing the post
-          if (this.currentPost && this.currentPost.id === comment.postId) {
-            // Increment comment count
-            this.currentPost = {
-              ...this.currentPost,
-              commentCount: this.currentPost.commentCount + 1
-            };
-            
-            // Add new comment to the list
-            this.postComments.push(response.data);
-          }
-          
-          return { success: true, commentId: response.data.id };
-        }
-        
-        throw new Error('Failed to create comment');
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to create comment';
-        console.error('Error creating comment:', error);
-        return { success: false, error: this.error };
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    
-    async updateComment(commentId: string, content: string) {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' };
-      
-      this.isLoading = true;
-      this.error = null;
-      
-      try {
-        const response = await axios.patch(
-          `${useRuntimeConfig().public.apiUrl}/forum/comments/${commentId}`,
-          { content },
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('jwt-token')}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-        if (response.status === 200) {
-          // Update local comment if it exists in the current list
-          const index = this.postComments.findIndex(c => c.id === commentId);
-          if (index !== -1) {
-            this.postComments[index] = {
-              ...this.postComments[index],
-              content,
-              updatedAt: new Date().toISOString(),
-              isEdited: true
-            };
-          }
-          
-          return { success: true };
-        }
-        
-        throw new Error('Failed to update comment');
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to update comment';
-        console.error('Error updating comment:', error);
-        return { success: false, error: this.error };
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    
-    async deleteComment(commentId: string) {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' };
-      
-      this.isLoading = true;
-      this.error = null;
-      
-      try {
-        const response = await axios.delete(
-          `${useRuntimeConfig().public.apiUrl}/forum/comments/${commentId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('jwt-token')}`,
-            },
-          }
-        );
-        
-        if (response.status === 200) {
-          // Remove the comment from local list
-          const index = this.postComments.findIndex(c => c.id === commentId);
-          if (index !== -1) {
-            // Get the post ID before removing the comment
-            const postId = this.postComments[index].postId;
-            
-            // Remove the comment
-            this.postComments.splice(index, 1);
-            
-            // Update comment count on the current post if relevant
-            if (this.currentPost && this.currentPost.id === postId) {
-              this.currentPost = {
-                ...this.currentPost,
-                commentCount: Math.max(0, this.currentPost.commentCount - 1)
-              };
-            }
-          }
-          
-          return { success: true };
-        }
-        
-        throw new Error('Failed to delete comment');
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to delete comment';
-        console.error('Error deleting comment:', error);
-        return { success: false, error: this.error };
-      } finally {
-        this.isLoading = false;
-      }
-    },
-    
+
     async likePost(postId: string) {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' };
-      
-      try {
-        const response = await axios.post(
-          `${useRuntimeConfig().public.apiUrl}/forum/posts/${postId}/like`,
-          {},
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('jwt-token')}`,
-            },
-          }
-        );
-        
-        if (response.status === 200) {
-          // Update like count in current post if relevant
-          if (this.currentPost && this.currentPost.id === postId) {
-            this.currentPost = {
-              ...this.currentPost,
-              likes: this.currentPost.likes + 1
-            };
-          }
-          
-          // Also update in the posts list if it exists there
-          const index = this.posts.findIndex(p => p.id === postId);
-          if (index !== -1) {
-            this.posts[index] = {
-              ...this.posts[index],
-              likes: this.posts[index].likes + 1
-            };
-          }
-          
-          return { success: true };
-        }
-        
-        throw new Error('Failed to like post');
-      } catch (error: any) {
-        console.error('Error liking post:', error);
-        return { success: false, error: error.response?.data?.message || 'Failed to like post' };
-      }
+      const { $supabase } = useNuxtApp()
+      const authStore = useAuthStore()
+      if (!authStore.isAuthenticated) return { success: false }
+      await ($supabase as any).from('interactions').insert({
+        user_id: authStore.userId, target_id: postId,
+        target_type: 'post', interaction_type: 'like',
+      })
+      await ($supabase as any).from('forum_posts').update({ likes: (this.currentPost?.likes || 0) + 1 }).eq('id', postId)
+      if (this.currentPost?.id === postId) this.currentPost = { ...this.currentPost, likes: this.currentPost.likes + 1 }
+      return { success: true }
     },
-    
-    async likeComment(commentId: string) {
-      const authStore = useAuthStore();
-      if (!authStore.isAuthenticated) return { success: false, error: 'Not authenticated' };
-      
-      try {
-        const response = await axios.post(
-          `${useRuntimeConfig().public.apiUrl}/forum/comments/${commentId}/like`,
-          {},
-          {
-            headers: {
-              'Authorization': `Bearer ${Cookies.get('jwt-token')}`,
-            },
-          }
-        );
-        
-        if (response.status === 200) {
-          // Update like count in the comment list if it exists there
-          const index = this.postComments.findIndex(c => c.id === commentId);
-          if (index !== -1) {
-            this.postComments[index] = {
-              ...this.postComments[index],
-              likes: this.postComments[index].likes + 1
-            };
-          }
-          
-          return { success: true };
-        }
-        
-        throw new Error('Failed to like comment');
-      } catch (error: any) {
-        console.error('Error liking comment:', error);
-        return { success: false, error: error.response?.data?.message || 'Failed to like comment' };
-      }
-    },
-    
+
     async searchPosts(query: string) {
-      this.isLoading = true;
-      this.error = null;
-      
+      const { $supabase } = useNuxtApp()
       try {
-        const response = await axios.get(
-          `${useRuntimeConfig().public.apiUrl}/forum/posts/search`,
-          { params: { query } }
-        );
-        
-        if (response.status === 200) {
-          return { success: true, posts: response.data.posts };
-        }
-        
-        throw new Error('Failed to search posts');
-      } catch (error: any) {
-        this.error = error.response?.data?.message || 'Failed to search posts';
-        console.error('Error searching posts:', error);
-        return { success: false, error: this.error, posts: [] };
-      } finally {
-        this.isLoading = false;
+        const { data, error } = await ($supabase as any)
+          .from('forum_posts')
+          .select('*')
+          .ilike('title', `%${query}%`)
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        return { success: true, posts: data || [] }
+      } catch {
+        return { success: false, posts: [] }
       }
     },
-    
+
     clearError() {
-      this.error = null;
-    }
-  }
-});
+      this.error = null
+    },
+  },
+})

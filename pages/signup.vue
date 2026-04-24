@@ -305,53 +305,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '~/stores/auth';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '~/stores/auth'
 
-const router = useRouter();
-const authStore = useAuthStore();
+const router    = useRouter()
+const authStore = useAuthStore()
 
-// Form data
-const userType = ref('developer');
-const firstName = ref('');
-const lastName = ref('');
-const email = ref('');
-const username = ref('');
-const password = ref('');
-const passwordConfirm = ref('');
-const studioName = ref('');
-const devType = ref('indie');
-const skills = ref<string[]>([]);
-const agreeToTerms = ref(false);
-const isLoading = ref(false);
-const error = ref('');
+const userType       = ref('developer')
+const firstName      = ref('')
+const lastName       = ref('')
+const email          = ref('')
+const username       = ref('')
+const password       = ref('')
+const passwordConfirm = ref('')
+const studioName     = ref('')
+const devType        = ref('indie')
+const skills         = ref<string[]>([])
+const agreeToTerms   = ref(false)
+const isLoading      = ref(false)
+const error          = ref('')
 
-// Handle signup submission
 const signup = async () => {
-  // Validate passwords match
   if (password.value !== passwordConfirm.value) {
-    error.value = 'Passwords do not match';
-    return;
+    error.value = 'Passwords do not match'
+    return
   }
-  
-  isLoading.value = true;
-  error.value = '';
-  
-  try {
-    // For demo purposes, simulate API call with a timeout
-    setTimeout(() => {
-      // In a real app, this would call a signup action in the auth store
-      
-      // Redirect to confirmation page
-      router.push('/dashboard');
-      
-      isLoading.value = false;
-    }, 1500);
-  } catch (err) {
-    console.error('Signup error:', err);
-    error.value = 'An error occurred during signup. Please try again.';
-    isLoading.value = false;
+  isLoading.value = true
+  error.value = ''
+
+  await authStore.signup({
+    email:    email.value,
+    password: password.value,
+    username: username.value || `${firstName.value}${lastName.value}`.toLowerCase(),
+  })
+
+  if (authStore.error) {
+    error.value = authStore.error
+    isLoading.value = false
+    return
   }
-};
+
+  await router.push('/dashboard')
+  isLoading.value = false
+}
 </script>

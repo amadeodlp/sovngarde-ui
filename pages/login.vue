@@ -18,12 +18,12 @@
           </div>
           
           <div class="mb-6">
-            <label for="username" class="block text-white font-medium mb-2">Username</label>
-            <input 
-              id="username" 
-              v-model="username" 
-              type="text" 
-              class="input w-full" 
+            <label for="username" class="block text-white font-medium mb-2">Email</label>
+            <input
+              id="username"
+              v-model="username"
+              type="email"
+              class="input w-full"
               required
             />
           </div>
@@ -102,45 +102,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '~/stores/auth';
+import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '~/stores/auth'
 
-const route = useRoute();
-const router = useRouter();
-const authStore = useAuthStore();
+const route      = useRoute()
+const router     = useRouter()
+const authStore  = useAuthStore()
 
-// Form data
-const username = ref('');
-const password = ref('');
-const rememberMe = ref(false);
-const isLoading = ref(false);
-const error = ref('');
+const username   = ref('')
+const password   = ref('')
+const rememberMe = ref(false)
+const isLoading  = ref(false)
+const error      = ref('')
 
-// Handle login submission
 const login = async () => {
-  isLoading.value = true;
-  error.value = '';
-  
-  try {
-    // In a real app, this would call the login action from the store
-    // For demo, we'll simulate a login
-    setTimeout(async () => {
-      // Simulate successful login
-      authStore.isAuthenticated = true;
-      authStore.username = username.value;
-      authStore.userType = Math.random() > 0.5 ? 'developer' : 'gamer';
-      
-      // Redirect to intended destination or dashboard
-      const redirectPath = route.query.redirect as string || '/dashboard';
-      await router.push(redirectPath);
-      
-      isLoading.value = false;
-    }, 1000);
-  } catch (err) {
-    console.error('Login error:', err);
-    error.value = 'Invalid username or password';
-    isLoading.value = false;
+  isLoading.value = true
+  error.value = ''
+  await authStore.login({ email: username.value, password: password.value })
+  if (authStore.error) {
+    error.value = authStore.error
+    isLoading.value = false
+    return
   }
-};
+  const redirectPath = route.query.redirect as string || '/dashboard'
+  await router.push(redirectPath)
+  isLoading.value = false
+}
 </script>
