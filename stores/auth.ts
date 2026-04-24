@@ -42,7 +42,10 @@ export const useAuthStore = defineStore('auth', {
         const { data, error } = await ($supabase as any).auth.signUp({
           email: payload.email,
           password: payload.password,
-          options: { data: { username: payload.username } },
+          options: {
+            data: { username: payload.username },
+            emailRedirectTo: 'https://sovngarde.social',
+          },
         })
         if (error) throw error
         await ($supabase as any).from('profiles').update({
