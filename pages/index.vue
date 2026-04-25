@@ -26,47 +26,34 @@
           <NuxtLink to="/discover" class="text-primary">View all →</NuxtLink>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div v-for="i in 3" :key="i" class="card overflow-hidden group">
-            <!-- Project thumbnail -->
+        <div v-if="featuredProjects.length" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div v-for="project in featuredProjects" :key="project.id" class="card overflow-hidden group">
             <div class="aspect-video bg-neutral-800 relative overflow-hidden">
-              <img 
-                :src="`https://picsum.photos/seed/game${i}/600/340`" 
+              <img
+                :src="project.thumbnail_url"
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 alt="Game thumbnail"
               />
-              <div class="absolute top-2 right-2 bg-primary/90 text-white text-xs px-2 py-1 rounded">
-                {{ ['In Development', 'Beta', 'Released'][i-1] }}
+              <div class="absolute top-2 right-2 bg-primary/90 text-white text-xs px-2 py-1 rounded capitalize">
+                {{ project.status }}
               </div>
             </div>
-            
-            <!-- Project info -->
             <div class="p-5">
-              <h3 class="text-xl font-semibold text-white mb-2">
-                {{ ['Nebula Frontier', 'Pixel Knights', 'Dragon Realm'][i-1] }}
-              </h3>
-              <p class="text-white/70 line-clamp-2 mb-4">
-                {{ ['A space exploration RPG with procedurally generated planets', 'Retro-style action adventure with modern mechanics', 'Open world fantasy with deep crafting system'][i-1] }}
-              </p>
-              
+              <h3 class="text-xl font-semibold text-white mb-2">{{ project.title }}</h3>
+              <p class="text-white/70 line-clamp-2 mb-4">{{ project.description }}</p>
               <div class="flex flex-wrap gap-2 mb-4">
-                <span class="bg-neutral-800 text-white/70 px-2 py-1 rounded-md text-xs">
-                  {{ ['Space', 'Pixel Art', 'Fantasy'][i-1] }}
-                </span>
-                <span class="bg-neutral-800 text-white/70 px-2 py-1 rounded-md text-xs">
-                  {{ ['RPG', 'Adventure', 'Open World'][i-1] }}
+                <span v-for="g in project.genre.slice(0, 2)" :key="g" class="bg-neutral-800 text-white/70 px-2 py-1 rounded-md text-xs">
+                  {{ g }}
                 </span>
               </div>
-              
               <div class="flex justify-between items-center">
-                <div class="text-sm text-white/60">
-                  <span>By {{ ['CosmicGames', 'RetroStudios', 'DragonDev'][i-1] }}</span>
-                </div>
-                <NuxtLink :to="`/projects/${i}`" class="text-primary">View Project</NuxtLink>
+                <div class="text-sm text-white/60">By {{ project.creator_name }}</div>
+                <NuxtLink :to="`/projects/${project.id}`" class="text-primary">View Project</NuxtLink>
               </div>
             </div>
           </div>
         </div>
+        <div v-else class="text-center text-white/40 py-12">No featured projects yet.</div>
       </div>
     </section>
     
@@ -124,3 +111,30 @@
     </section>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useProjectsStore, type GameProject } from '~/stores/projects'
+
+const projectsStore = useProjectsStore()
+const featuredProjects = ref<GameProject[]>([])
+
+onMounted(async () => {
+  const { $supabase } = useNuxtApp()
+  const { data } = await ($supabase as any)
+    .from('game_projects')
+    .select('*')
+    .eq('featured', true)
+    .order('created_at', { ascending: false })
+    .limit(3)
+  featuredProjects.value = data || []
+
+  // fallback: if no featured flag, show 3 most viewed
+  if (!featuredProjects.value.length) {
+    await projectsStore.fetchProjects()
+    featuredProjects.value = [...projectsStore.projects]
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .slice(0, 3)
+  }
+})
+</script>

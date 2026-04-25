@@ -117,7 +117,7 @@
           <div v-for="(project, index) in projects" :key="index" class="card hover:border-primary/30 transition-colors">
             <div class="relative h-40 overflow-hidden">
               <img 
-                :src="project.thumbnailUrl" 
+                :src="project.thumbnail_url"
                 :alt="project.title" 
                 class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
               />
@@ -133,7 +133,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
-                  <span>{{ project.metrics?.likes || 0 }}</span>
+                  <span>{{ project.likes || 0 }}</span>
                 </div>
               </div>
               
@@ -150,7 +150,7 @@
               </div>
               
               <div class="flex justify-between items-center">
-                <div class="text-sm text-white/70">{{ project.creatorName }}</div>
+                <div class="text-sm text-white/70">{{ project.creator_name }}</div>
                 <NuxtLink :to="`/projects/${project.id}`" class="text-primary hover:text-primary/80">View Project</NuxtLink>
               </div>
             </div>
@@ -173,15 +173,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useProjectsStore, type GameProject } from '~/stores/projects';
+import { type GameProject } from '~/stores/projects';
 
-const projectsStore = useProjectsStore();
 const searchQuery = ref('');
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 const projects = ref<GameProject[]>([]);
 
-// Filter options
 const statusOptions = [
   { label: 'Concept', value: 'concept' },
   { label: 'In Development', value: 'in-development' },
@@ -190,19 +188,17 @@ const statusOptions = [
 ];
 
 const genreOptions = [
-  'Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 
+  'Action', 'Adventure', 'RPG', 'Strategy', 'Simulation',
   'Puzzle', 'Sports', 'Racing', 'Platformer', 'Shooter'
 ];
 
-// Active filters
 const filters = ref({
-  status: [],
-  genre: [],
+  status: [] as string[],
+  genre: [] as string[],
   sort: 'newest',
   search: ''
 });
 
-// Methods
 const searchProjects = () => {
   filters.value.search = searchQuery.value;
   applyFilters();
@@ -211,72 +207,40 @@ const searchProjects = () => {
 const applyFilters = async () => {
   isLoading.value = true;
   error.value = null;
-  
   try {
-    // For demo, simulate API call with mock data
-    setTimeout(() => {
-      // Generate mock projects
-      projects.value = Array.from({ length: 12 }, (_, i) => ({
-        id: `project-${i}`,
-        title: `Game Project ${i+1}`,
-        description: `This is a sample game project description. It includes details about gameplay features and mechanics.`,
-        thumbnailUrl: `https://picsum.photos/seed/game${i}/600/400`,
-        creatorId: `user-${i % 5}`,
-        creatorName: `Developer ${i % 5 + 1}`,
-        status: ['concept', 'in-development', 'beta', 'released'][i % 4],
-        genre: [genreOptions[i % 10], genreOptions[(i+3) % 10]],
-        platforms: ['PC', 'Mac', 'Mobile'][i % 3].split(','),
-        engine: ['Unity', 'Unreal', 'Godot', 'Custom'][i % 4],
-        teamSize: (i % 5) + 1,
-        metrics: {
-          views: Math.floor(Math.random() * 1000),
-          likes: Math.floor(Math.random() * 200),
-          followers: Math.floor(Math.random() * 100)
-        }
-      }));
-      
-      // Apply filters
-      if (filters.value.status.length > 0) {
-        projects.value = projects.value.filter(p => 
-          filters.value.status.includes(p.status)
-        );
-      }
-      
-      if (filters.value.genre.length > 0) {
-        projects.value = projects.value.filter(p => 
-          p.genre.some(g => filters.value.genre.includes(g))
-        );
-      }
-      
-      if (filters.value.search) {
-        const search = filters.value.search.toLowerCase();
-        projects.value = projects.value.filter(p => 
-          p.title.toLowerCase().includes(search) || 
-          p.description.toLowerCase().includes(search)
-        );
-      }
-      
-      isLoading.value = false;
-    }, 500);
+    const { $supabase } = useNuxtApp();
+    let query = ($supabase as any).from('game_projects').select('*');
+
+    if (filters.value.status.length > 0) {
+      query = query.in('status', filters.value.status);
+    }
+    if (filters.value.genre.length > 0) {
+      query = query.overlaps('genre', filters.value.genre);
+    }
+    if (filters.value.search) {
+      query = query.ilike('title', `%${filters.value.search}%`);
+    }
+
+    query = filters.value.sort === 'popular'
+      ? query.order('views', { ascending: false })
+      : query.order('created_at', { ascending: false });
+
+    const { data, error: err } = await query;
+    if (err) throw err;
+    projects.value = data || [];
   } catch (err) {
-    console.error('Error fetching projects:', err);
     error.value = 'Failed to load projects';
+  } finally {
     isLoading.value = false;
   }
 };
 
 const resetFilters = () => {
-  filters.value = {
-    status: [],
-    genre: [],
-    sort: 'newest',
-    search: ''
-  };
+  filters.value = { status: [], genre: [], sort: 'newest', search: '' };
   searchQuery.value = '';
   applyFilters();
 };
 
-// Fetch initial projects
 onMounted(() => {
   applyFilters();
 });

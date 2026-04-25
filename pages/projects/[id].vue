@@ -26,7 +26,7 @@
       <div class="relative h-[40vh] bg-neutral-900 overflow-hidden">
         <!-- Cover Image -->
         <img 
-          :src="project.thumbnailUrl" 
+          :src="project.thumbnail_url"
           :alt="project.title" 
           class="w-full h-full object-cover opacity-50"
         />
@@ -40,7 +40,7 @@
             <!-- Thumbnail -->
             <div class="w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden border-4 border-neutral-950 shadow-lg">
               <img 
-                :src="project.thumbnailUrl" 
+                :src="project.thumbnail_url"
                 :alt="project.title" 
                 class="w-full h-full object-cover"
               />
@@ -62,11 +62,11 @@
               <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2">{{ project.title }}</h1>
               
               <div class="flex items-center text-white/60 text-sm">
-                <span>By {{ project.creatorName }}</span>
+                <span>By {{ project.creator_name }}</span>
                 <span class="mx-2">•</span>
                 <span>Engine: {{ project.engine }}</span>
                 <span class="mx-2">•</span>
-                <span>Team: {{ project.teamSize }} {{ project.teamSize === 1 ? 'member' : 'members' }}</span>
+                <span>Team: {{ project.team_size }} {{ project.team_size === 1 ? 'member' : 'members' }}</span>
               </div>
             </div>
             
@@ -123,12 +123,6 @@
                   <h2 class="text-2xl font-bold text-white mb-4">About the Game</h2>
                   <div class="prose prose-invert">
                     <p class="text-white/80 leading-relaxed">{{ project.description }}</p>
-                    
-                    <!-- Extended description -->
-                    <p class="text-white/80 leading-relaxed mt-4">
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur
-                      euismod, nisi nisl consectetur nisi, euismod nisi nisl consectetur nisi.
-                    </p>
                   </div>
                 </div>
                 
@@ -147,21 +141,10 @@
                 </div>
               </div>
               
-              <!-- Updates Tab -->
               <div v-else-if="activeTab === 'updates'" class="space-y-6">
                 <div class="card p-6">
                   <h2 class="text-2xl font-bold text-white mb-6">Development Updates</h2>
-                  
-                  <div class="space-y-8">
-                    <div v-for="(update, index) in updates" :key="index" class="border-b border-white/10 pb-6 last:border-b-0 last:pb-0">
-                      <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-xl font-semibold text-white">{{ update.title }}</h3>
-                        <span class="text-white/60 text-sm">{{ update.date }}</span>
-                      </div>
-                      
-                      <p class="text-white/80">{{ update.content }}</p>
-                    </div>
-                  </div>
+                  <p class="text-white/40 text-sm text-center py-4">No updates posted yet.</p>
                 </div>
               </div>
               
@@ -169,17 +152,16 @@
               <div v-else-if="activeTab === 'comments'" class="space-y-6">
                 <div class="card p-6">
                   <h2 class="text-2xl font-bold text-white mb-6">Comments</h2>
-                  
-                  <!-- Comment Form -->
+
                   <div class="mb-8">
-                    <textarea 
+                    <textarea
                       v-model="newComment"
-                      placeholder="Leave a comment..." 
+                      placeholder="Leave a comment..."
                       class="input w-full h-24 resize-none mb-3"
                     ></textarea>
                     <div class="flex justify-end">
-                      <button 
-                        @click="submitComment" 
+                      <button
+                        @click="submitComment"
                         class="btn btn-primary"
                         :disabled="!newComment.trim()"
                       >
@@ -187,25 +169,22 @@
                       </button>
                     </div>
                   </div>
-                  
-                  <!-- Comments List -->
-                  <div v-if="comments.length === 0" class="text-center py-8">
+
+                  <div v-if="projectComments.length === 0" class="text-center py-8">
                     <p class="text-white/60">No comments yet. Be the first to comment!</p>
                   </div>
-                  
+
                   <div v-else class="space-y-6">
-                    <div v-for="(comment, index) in comments" :key="index" class="border-b border-white/10 pb-6 last:border-b-0 last:pb-0">
+                    <div v-for="comment in projectComments" :key="comment.id" class="border-b border-white/10 pb-6 last:border-b-0 last:pb-0">
                       <div class="flex items-start space-x-4">
                         <div class="h-10 w-10 rounded-full bg-neutral-800 flex items-center justify-center flex-shrink-0">
-                          <span class="text-sm font-medium">{{ getInitials(comment.author) }}</span>
+                          <span class="text-sm font-medium">{{ getInitials(comment.author_name) }}</span>
                         </div>
-                        
                         <div class="flex-1">
                           <div class="flex justify-between items-center mb-2">
-                            <span class="font-medium text-white">{{ comment.author }}</span>
-                            <span class="text-white/60 text-sm">{{ comment.date }}</span>
+                            <span class="font-medium text-white">{{ comment.author_name }}</span>
+                            <span class="text-white/60 text-sm">{{ formatDate(comment.created_at) }}</span>
                           </div>
-                          
                           <p class="text-white/80">{{ comment.content }}</p>
                         </div>
                       </div>
@@ -227,7 +206,7 @@
                 </div>
                 
                 <div>
-                  <h4 class="font-medium text-white">{{ project.creatorName }}</h4>
+                <h4 class="font-medium text-white">{{ project.creator_name }}</h4>
                   <p class="text-white/60 text-sm">Game Developer</p>
                 </div>
               </div>
@@ -241,15 +220,15 @@
               
               <div class="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div class="text-2xl font-semibold text-white">{{ project.metrics?.views || 0 }}</div>
+                  <div class="text-2xl font-semibold text-white">{{ project.views || 0 }}</div>
                   <div class="text-white/60 text-sm">Views</div>
                 </div>
                 <div>
-                  <div class="text-2xl font-semibold text-white">{{ project.metrics?.likes || 0 }}</div>
+                  <div class="text-2xl font-semibold text-white">{{ project.likes || 0 }}</div>
                   <div class="text-white/60 text-sm">Likes</div>
                 </div>
                 <div>
-                  <div class="text-2xl font-semibold text-white">{{ project.metrics?.followers || 0 }}</div>
+                  <div class="text-2xl font-semibold text-white">{{ project.followers || 0 }}</div>
                   <div class="text-white/60 text-sm">Followers</div>
                 </div>
               </div>
@@ -310,7 +289,6 @@ const projectId = route.params.id as string;
 const projectsStore = useProjectsStore();
 const authStore = useAuthStore();
 
-// State
 const project = ref<GameProject | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
@@ -319,76 +297,39 @@ const isFollowing = ref(false);
 const isLiked = ref(false);
 const newComment = ref('');
 
-// Tabs
+interface ProjectComment {
+  id: string
+  author_name: string
+  content: string
+  created_at: string
+}
+const projectComments = ref<ProjectComment[]>([]);
+
 const tabs = [
   { id: 'about', label: 'About' },
   { id: 'updates', label: 'Updates' },
   { id: 'comments', label: 'Comments' }
 ];
 
-// Sample data
-const updates = ref([
-  {
-    title: 'New Demo Release',
-    date: '2 weeks ago',
-    content: 'We\'re excited to announce that a playable demo is now available! This build includes the first three levels and showcases the core gameplay mechanics we\'ve been developing.'
-  },
-  {
-    title: 'Character Design Progress',
-    date: '1 month ago',
-    content: 'Our art team has been working hard on finalizing the character designs. We\'ve reworked the main protagonist\'s appearance based on early feedback and added more customization options.'
-  },
-  {
-    title: 'Engine Upgrade Complete',
-    date: '2 months ago',
-    content: 'We\'ve successfully completed the upgrade to the latest engine version, which brings significant performance improvements and new rendering features.'
-  }
-]);
-
-const comments = ref([
-  {
-    author: 'GameEnthusiast',
-    date: '3 days ago',
-    content: 'The art style looks amazing! I\'m really excited to see more gameplay footage. Will there be a beta test before the full release?'
-  },
-  {
-    author: 'IndieSupporter',
-    date: '1 week ago',
-    content: 'Been following this project since the first announcement. The progress you\'ve made is incredible! The new mechanics shown in the latest video are exactly what this genre needs.'
-  }
-]);
-
-// Methods
 const loadProject = async () => {
   isLoading.value = true;
   error.value = null;
-  
   try {
-    // For demo purposes, create a mock project
-    setTimeout(() => {
-      project.value = {
-        id: projectId,
-        title: `Game Project ${projectId}`,
-        description: `This is an exciting game project that combines multiple genres into a unique experience. Players will explore vast worlds, solve puzzles, and engage in tactical combat.`,
-        thumbnailUrl: `https://picsum.photos/seed/game${projectId}/800/450`,
-        creatorId: 'user-1',
-        creatorName: 'GameDevStudio',
-        status: ['concept', 'in-development', 'beta', 'released'][parseInt(projectId) % 4],
-        genre: ['RPG', 'Adventure', 'Strategy'].slice(0, 2),
-        platforms: ['PC', 'Mac', 'PlayStation', 'Xbox', 'Switch'].slice(0, 3),
-        engine: ['Unity', 'Unreal', 'Godot', 'Custom'][parseInt(projectId) % 4],
-        teamSize: (parseInt(projectId) % 5) + 1,
-        metrics: {
-          views: 1200 + parseInt(projectId) * 100,
-          likes: 342 + parseInt(projectId) * 10,
-          followers: 78 + parseInt(projectId) * 5
-        }
-      };
-      isLoading.value = false;
-    }, 500);
+    await projectsStore.fetchProjectById(projectId);
+    project.value = projectsStore.currentProject;
+    if (!project.value) throw new Error('Project not found');
+
+    // load comments from forum_comments linked to this project via post, or a direct table
+    const { $supabase } = useNuxtApp();
+    const { data } = await ($supabase as any)
+      .from('forum_comments')
+      .select('id, author_name, content, created_at')
+      .eq('post_id', projectId)
+      .order('created_at', { ascending: false });
+    projectComments.value = data || [];
   } catch (err) {
-    console.error('Error loading project:', err);
     error.value = 'Failed to load project details';
+  } finally {
     isLoading.value = false;
   }
 };
@@ -396,67 +337,68 @@ const loadProject = async () => {
 const getInitials = (name: string): string => {
   if (!name) return '';
   const parts = name.split(' ');
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  return parts.length === 1
+    ? parts[0].charAt(0).toUpperCase()
+    : (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
+
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(dateString));
 };
 
 const followProject = () => {
   if (!authStore.isAuthenticated) {
-    // Redirect to login
     navigateTo('/login?redirect=' + encodeURIComponent(route.fullPath));
     return;
   }
-  
   isFollowing.value = !isFollowing.value;
-  
-  // Update follower count
-  if (project.value && project.value.metrics) {
-    if (isFollowing.value) {
-      project.value.metrics.followers += 1;
-    } else {
-      project.value.metrics.followers = Math.max(0, project.value.metrics.followers - 1);
-    }
+  if (project.value) {
+    project.value = {
+      ...project.value,
+      followers: (project.value.followers || 0) + (isFollowing.value ? 1 : -1)
+    };
   }
 };
 
 const likeProject = () => {
   if (!authStore.isAuthenticated) {
-    // Redirect to login
     navigateTo('/login?redirect=' + encodeURIComponent(route.fullPath));
     return;
   }
-  
   if (!isLiked.value) {
     isLiked.value = true;
-    
-    // Update like count
-    if (project.value && project.value.metrics) {
-      project.value.metrics.likes += 1;
+    if (project.value) {
+      project.value = { ...project.value, likes: (project.value.likes || 0) + 1 };
     }
   }
 };
 
-const submitComment = () => {
+const submitComment = async () => {
   if (!authStore.isAuthenticated) {
-    // Redirect to login
     navigateTo('/login?redirect=' + encodeURIComponent(route.fullPath));
     return;
   }
-  
   if (!newComment.value.trim()) return;
-  
-  // Add comment
-  comments.value.unshift({
-    author: authStore.username || 'Anonymous',
-    date: 'Just now',
-    content: newComment.value
-  });
-  
-  // Clear input
-  newComment.value = '';
+
+  const { $supabase } = useNuxtApp();
+  const { data, error: err } = await ($supabase as any)
+    .from('forum_comments')
+    .insert({
+      post_id: projectId,
+      author_id: authStore.userId,
+      author_name: authStore.username || 'Anonymous',
+      content: newComment.value.trim(),
+    })
+    .select()
+    .single();
+
+  if (!err && data) {
+    projectComments.value.unshift(data);
+    newComment.value = '';
+  }
 };
 
-// Load project data on mount
 onMounted(() => {
   loadProject();
 });

@@ -18,19 +18,22 @@
           <h2 class="text-xl font-bold text-white mb-4">Categories</h2>
           
           <div class="space-y-3">
-            <button 
-              v-for="category in categories" 
+            <button
+              v-for="category in communityStore.categories"
               :key="category.id"
               class="flex items-center w-full p-2 rounded-md text-left hover:bg-neutral-800 transition-colors"
               :class="{ 'bg-neutral-800': activeCategoryId === category.id }"
               @click="selectCategory(category.id)"
             >
-              <div class="h-8 w-8 rounded-md flex items-center justify-center mr-3" :class="category.colorClass">
+              <div
+                class="h-8 w-8 rounded-md flex items-center justify-center mr-3"
+                :style="{ background: (category.color || '#6366f1') + '33', color: category.color || '#6366f1' }"
+              >
                 <span class="text-lg">{{ category.icon }}</span>
               </div>
               <div class="flex-1">
                 <span class="text-white font-medium">{{ category.name }}</span>
-                <div class="text-white/60 text-sm">{{ category.postCount }} posts</div>
+                <div class="text-white/60 text-sm">{{ category.post_count || 0 }} posts</div>
               </div>
             </button>
           </div>
@@ -42,20 +45,12 @@
           
           <div class="grid grid-cols-2 gap-4">
             <div class="text-center">
-              <div class="text-2xl font-bold text-white">12.4K</div>
+              <div class="text-2xl font-bold text-white">{{ memberCount }}</div>
               <div class="text-white/60 text-sm">Members</div>
             </div>
             <div class="text-center">
-              <div class="text-2xl font-bold text-white">43.7K</div>
+              <div class="text-2xl font-bold text-white">{{ totalPostCount }}</div>
               <div class="text-white/60 text-sm">Posts</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-white">327</div>
-              <div class="text-white/60 text-sm">Online</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-white">198</div>
-              <div class="text-white/60 text-sm">New Today</div>
             </div>
           </div>
           
@@ -71,7 +66,7 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div class="flex items-center">
             <h2 class="text-2xl font-bold text-white mr-3">
-              {{ activeCategoryId ? getCategoryName(activeCategoryId) : 'All Discussions' }}
+          {{ activeCategoryId ? getCategoryName(activeCategoryId) : 'All Discussions' }}
             </h2>
             <button v-if="activeCategoryId" @click="clearCategoryFilter" class="text-primary">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,14 +103,14 @@
           </div>
           
           <div class="space-y-4">
-            <div v-for="post in pinnedPosts" :key="post.id" class="card p-5 hover:border-primary/30 transition-colors">
+            <div v-for="post in communityStore.pinnedPosts" :key="post.id" class="card p-5 hover:border-primary/30 transition-colors">
               <div class="flex items-start">
                 <div class="hidden sm:block h-10 w-10 rounded-full bg-neutral-800 flex-shrink-0 mr-4">
                   <div class="h-full w-full flex items-center justify-center">
-                    <span class="text-sm font-medium">{{ getInitials(post.author) }}</span>
+                    <span class="text-sm font-medium">{{ getInitials(post.author_name) }}</span>
                   </div>
                 </div>
-                
+
                 <div class="flex-1">
                   <div class="flex items-center text-yellow-500 mb-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -123,27 +118,20 @@
                     </svg>
                     <span class="text-sm font-medium">Pinned</span>
                   </div>
-                  
+
                   <h3 class="text-lg font-medium text-white hover:text-primary mb-1">{{ post.title }}</h3>
-                  
+
                   <div class="flex flex-wrap items-center text-sm text-white/60 gap-x-4 gap-y-2">
-                    <span>{{ post.author }}</span>
-                    <span>{{ post.date }}</span>
+                    <span>{{ post.author_name }}</span>
+                    <span>{{ formatDate(post.created_at) }}</span>
                     <span class="flex items-center">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                       </svg>
-                      {{ post.comments }}
-                    </span>
-                    <span class="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      {{ post.views }}
+                      {{ post.comment_count || 0 }}
                     </span>
                     <span class="inline-block bg-neutral-800 text-white/80 px-2 py-0.5 rounded-md text-xs">
-                      {{ post.category }}
+                      {{ getCategoryName(post.category_id) }}
                     </span>
                   </div>
                 </div>
@@ -166,31 +154,24 @@
               <div class="flex items-start">
                 <div class="hidden sm:block h-10 w-10 rounded-full bg-neutral-800 flex-shrink-0 mr-4">
                   <div class="h-full w-full flex items-center justify-center">
-                    <span class="text-sm font-medium">{{ getInitials(post.author) }}</span>
+                    <span class="text-sm font-medium">{{ getInitials(post.author_name) }}</span>
                   </div>
                 </div>
-                
+
                 <div class="flex-1">
                   <h3 class="text-lg font-medium text-white hover:text-primary mb-1">{{ post.title }}</h3>
-                  
+
                   <div class="flex flex-wrap items-center text-sm text-white/60 gap-x-4 gap-y-2">
-                    <span>{{ post.author }}</span>
-                    <span>{{ post.date }}</span>
+                    <span>{{ post.author_name }}</span>
+                    <span>{{ formatDate(post.created_at) }}</span>
                     <span class="flex items-center">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                       </svg>
-                      {{ post.comments }}
-                    </span>
-                    <span class="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                      {{ post.views }}
+                      {{ post.comment_count || 0 }}
                     </span>
                     <span class="inline-block bg-neutral-800 text-white/80 px-2 py-0.5 rounded-md text-xs">
-                      {{ post.category }}
+                      {{ getCategoryName(post.category_id) }}
                     </span>
                   </div>
                 </div>
@@ -227,195 +208,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useCommunityStore } from '~/stores/community';
 
-// Categories
-const categories = [
-  { 
-    id: 1, 
-    name: 'Game Design', 
-    icon: '🎮', 
-    postCount: 342, 
-    colorClass: 'bg-blue-600/20 text-blue-500'
-  },
-  { 
-    id: 2, 
-    name: 'Art & Animation', 
-    icon: '🎨', 
-    postCount: 275, 
-    colorClass: 'bg-purple-600/20 text-purple-500'
-  },
-  { 
-    id: 3, 
-    name: 'Programming', 
-    icon: '💻', 
-    postCount: 521, 
-    colorClass: 'bg-green-600/20 text-green-500'
-  },
-  { 
-    id: 4, 
-    name: 'Audio & Music', 
-    icon: '🎵', 
-    postCount: 184, 
-    colorClass: 'bg-yellow-600/20 text-yellow-500'
-  },
-  { 
-    id: 5, 
-    name: 'Marketing & Business', 
-    icon: '📊', 
-    postCount: 127, 
-    colorClass: 'bg-red-600/20 text-red-500'
-  },
-  { 
-    id: 6, 
-    name: 'Game Jams', 
-    icon: '⏱️', 
-    postCount: 98, 
-    colorClass: 'bg-orange-600/20 text-orange-500'
-  },
-  { 
-    id: 7, 
-    name: 'Feedback Requests', 
-    icon: '📝', 
-    postCount: 263, 
-    colorClass: 'bg-teal-600/20 text-teal-500'
-  }
-];
+const communityStore = useCommunityStore();
+const activeCategoryId = ref<string | null>(null);
+const memberCount = ref(0);
 
-// Forum posts
-const pinnedPosts = [
-  {
-    id: 1,
-    title: 'Welcome to the SovnGarde Community! Read our guidelines here',
-    author: 'Admin',
-    date: 'Pinned 3 weeks ago',
-    comments: 48,
-    views: 3852,
-    category: 'Announcements',
-    categoryId: 8
-  },
-  {
-    id: 2,
-    title: 'Winter Game Jam 2025 - Registration Now Open!',
-    author: 'GameJamOrganizer',
-    date: 'Pinned yesterday',
-    comments: 76,
-    views: 1204,
-    category: 'Game Jams',
-    categoryId: 6
-  }
-];
+const totalPostCount = computed(() =>
+  communityStore.categories.reduce((sum, c) => sum + (c.post_count || 0), 0)
+);
 
-const recentPosts = [
-  {
-    id: 3,
-    title: 'How to optimize particle effects in Unity?',
-    author: 'CodeWizard',
-    date: '3 hours ago',
-    comments: 12,
-    views: 342,
-    category: 'Programming',
-    categoryId: 3
-  },
-  {
-    id: 4,
-    title: 'Pixel art techniques for beginners',
-    author: 'PixelPro',
-    date: '7 hours ago',
-    comments: 27,
-    views: 508,
-    category: 'Art & Animation',
-    categoryId: 2
-  },
-  {
-    id: 5,
-    title: 'Game monetization strategies in 2025',
-    author: 'GameBiz',
-    date: '12 hours ago',
-    comments: 31,
-    views: 876,
-    category: 'Marketing & Business',
-    categoryId: 5
-  },
-  {
-    id: 6,
-    title: 'Creating atmospheric sound design',
-    author: 'SoundScaper',
-    date: 'Yesterday',
-    comments: 15,
-    views: 327,
-    category: 'Audio & Music',
-    categoryId: 4
-  },
-  {
-    id: 7,
-    title: 'Level design principles that keep players engaged',
-    author: 'LevelMaster',
-    date: 'Yesterday',
-    comments: 42,
-    views: 683,
-    category: 'Game Design',
-    categoryId: 1
-  },
-  {
-    id: 8,
-    title: 'Please give feedback on my game demo!',
-    author: 'IndieDevOne',
-    date: '2 days ago',
-    comments: 19,
-    views: 204,
-    category: 'Feedback Requests',
-    categoryId: 7
-  },
-  {
-    id: 9,
-    title: 'AI in games: Current trends and future possibilities',
-    author: 'AIEnthusiast',
-    date: '2 days ago',
-    comments: 36,
-    views: 741,
-    category: 'Programming',
-    categoryId: 3
-  },
-  {
-    id: 10,
-    title: 'Common pitfalls to avoid in your first game release',
-    author: 'VeteranDev',
-    date: '3 days ago',
-    comments: 54,
-    views: 1284,
-    category: 'Marketing & Business',
-    categoryId: 5
-  }
-];
-
-// State
-const activeCategoryId = ref<number | null>(null);
-
-// Methods
 const getInitials = (name: string): string => {
   if (!name) return '';
   const parts = name.split(' ');
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  return parts.length === 1
+    ? parts[0].charAt(0).toUpperCase()
+    : (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 };
 
-const selectCategory = (id: number) => {
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(dateString));
+};
+
+const selectCategory = (id: string) => {
   activeCategoryId.value = id;
+  communityStore.fetchPosts(id);
 };
 
 const clearCategoryFilter = () => {
   activeCategoryId.value = null;
+  communityStore.fetchPosts();
 };
 
-const getCategoryName = (id: number): string => {
-  const category = categories.find(c => c.id === id);
-  return category ? category.name : '';
+const getCategoryName = (id: string): string => {
+  return communityStore.categories.find(c => c.id === id)?.name || '';
 };
 
-// Computed
 const filteredRecentPosts = computed(() => {
-  if (!activeCategoryId.value) return recentPosts;
-  return recentPosts.filter(post => post.categoryId === activeCategoryId.value);
+  if (!activeCategoryId.value) return communityStore.regularPosts;
+  return communityStore.regularPosts.filter(p => p.category_id === activeCategoryId.value);
+});
+
+onMounted(async () => {
+  await Promise.all([
+    communityStore.fetchCategories(),
+    communityStore.fetchPosts(),
+  ]);
+  // fetch real member count
+  const { $supabase } = useNuxtApp();
+  const { count } = await ($supabase as any)
+    .from('profiles')
+    .select('id', { count: 'exact', head: true });
+  memberCount.value = count || 0;
 });
 </script>

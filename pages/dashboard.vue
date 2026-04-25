@@ -81,10 +81,10 @@
                 <td class="py-4">
                   <div class="flex items-center space-x-3">
                     <div class="h-10 w-16 bg-neutral-800 rounded overflow-hidden">
-                      <img 
-                        v-if="project.thumbnailUrl" 
-                        :src="project.thumbnailUrl" 
-                        :alt="project.title" 
+                      <img
+                        v-if="project.thumbnail_url"
+                        :src="project.thumbnail_url"
+                        :alt="project.title"
                         class="h-full w-full object-cover"
                       />
                     </div>
@@ -104,9 +104,9 @@
                     {{ project.status }}
                   </span>
                 </td>
-                <td class="py-4 text-white/80">{{ project.metrics?.views.toLocaleString() || 0 }}</td>
-                <td class="py-4 text-white/80">{{ project.metrics?.likes.toLocaleString() || 0 }}</td>
-                <td class="py-4 text-white/80">{{ formatDate(project.updatedAt) }}</td>
+                <td class="py-4 text-white/80">{{ (project.views || 0).toLocaleString() }}</td>
+                <td class="py-4 text-white/80">{{ (project.likes || 0).toLocaleString() }}</td>
+                <td class="py-4 text-white/80">{{ formatDate(project.created_at) }}</td>
                 <td class="py-4">
                   <div class="flex space-x-2 justify-end">
                     <NuxtLink :to="`/projects/${project.id}`" class="text-white/60 hover:text-white p-1">
@@ -137,37 +137,7 @@
     <!-- Recent Activity -->
     <div class="card p-6">
       <h2 class="text-xl font-bold text-white mb-6">Recent Activity</h2>
-      
-      <div class="space-y-4">
-        <div v-for="(activity, index) in recentActivity" :key="index" class="flex items-start space-x-4 pb-4 border-b border-white/5 last:border-0 last:pb-0">
-          <div class="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-            <svg v-if="activity.type === 'view'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <svg v-else-if="activity.type === 'like'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <svg v-else-if="activity.type === 'follow'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-            </svg>
-          </div>
-          
-          <div class="flex-1">
-            <div class="flex justify-between items-start">
-              <p class="text-white/80">
-                <span class="font-medium text-white">{{ activity.user }}</span>
-                {{ activity.action }}
-                <span class="font-medium text-white">{{ activity.project }}</span>
-              </p>
-              <span class="text-white/60 text-sm">{{ activity.time }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <p class="text-white/40 text-sm text-center py-4">Activity feed coming soon.</p>
     </div>
   </div>
 </template>
@@ -175,138 +145,58 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '~/stores/auth';
-import { useProjectsStore, type GameProject } from '~/stores/projects';
+import { type GameProject } from '~/stores/projects';
 
 const authStore = useAuthStore();
-const projectsStore = useProjectsStore();
 
-// Check authentication
 if (!authStore.isAuthenticated) {
   navigateTo('/login?redirect=/dashboard');
 }
 
-// State
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const projects = ref<GameProject[]>([]);
-const projectToDelete = ref<GameProject | null>(null);
-const showDeleteModal = ref(false);
 
-// Sample data for activity
-const recentActivity = ref([
-  {
-    type: 'view',
-    user: 'GameLover42',
-    action: 'viewed your project',
-    project: 'Pixel Knights',
-    time: '5 minutes ago'
-  },
-  {
-    type: 'like',
-    user: 'DevFriend',
-    action: 'liked your project',
-    project: 'Nebula Frontier',
-    time: '30 minutes ago'
-  },
-  {
-    type: 'comment',
-    user: 'RPGFan',
-    action: 'commented on your project',
-    project: 'Dragon Realm',
-    time: '2 hours ago'
-  },
-  {
-    type: 'follow',
-    user: 'GameCollector',
-    action: 'followed your project',
-    project: 'Pixel Knights',
-    time: '5 hours ago'
-  },
-  {
-    type: 'view',
-    user: 'AdventureSeeker',
-    action: 'viewed your project',
-    project: 'Dragon Realm',
-    time: '1 day ago'
-  }
-]);
-
-// Computed values
 const projectsCount = computed(() => projects.value.length);
-const totalViews = computed(() => 
-  projects.value.reduce((sum, project) => sum + (project.metrics?.views || 0), 0)
-);
-const totalFollowers = computed(() => 
-  projects.value.reduce((sum, project) => sum + (project.metrics?.followers || 0), 0)
-);
+const totalViews = computed(() => projects.value.reduce((sum, p) => sum + (p.views || 0), 0));
+const totalFollowers = computed(() => projects.value.reduce((sum, p) => sum + (p.followers || 0), 0));
 
-// Methods
 const loadProjects = async () => {
   isLoading.value = true;
   error.value = null;
-  
   try {
-    // For demo, create mock projects
-    setTimeout(() => {
-      projects.value = Array.from({ length: 5 }, (_, i) => ({
-        id: `project-${i+1}`,
-        title: ['Pixel Knights', 'Nebula Frontier', 'Dragon Realm', 'Space Explorer', 'Dungeon Crawler'][i],
-        description: `This is project ${i+1} description.`,
-        thumbnailUrl: `https://picsum.photos/seed/project${i+1}/200/120`,
-        creatorId: authStore.username,
-        creatorName: authStore.username,
-        status: ['concept', 'in-development', 'beta', 'released'][i % 4],
-        genre: ['RPG', 'Adventure', 'Strategy', 'Puzzle', 'Platformer'][i].split(','),
-        platforms: ['PC', 'Mac', 'Mobile'][i % 3].split(','),
-        engine: ['Unity', 'Unreal', 'Godot', 'Custom'][i % 4],
-        teamSize: (i % 5) + 1,
-        createdAt: new Date(Date.now() - (30 - i) * 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - i * 86400000).toISOString(),
-        metrics: {
-          views: 1000 + i * 200,
-          likes: 100 + i * 50,
-          followers: 20 + i * 10
-        }
-      }));
-      
-      isLoading.value = false;
-    }, 1000);
+    const { $supabase } = useNuxtApp();
+    const { data, error: err } = await ($supabase as any)
+      .from('game_projects')
+      .select('*')
+      .eq('creator_id', authStore.userId)
+      .order('created_at', { ascending: false });
+    if (err) throw err;
+    projects.value = data || [];
   } catch (err) {
-    console.error('Error loading projects:', err);
     error.value = 'Failed to load your projects';
+  } finally {
     isLoading.value = false;
   }
 };
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(date);
+  if (!dateString) return '—';
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(dateString));
 };
 
-const confirmDelete = (project: GameProject) => {
-  projectToDelete.value = project;
-  showDeleteModal.value = true;
-  // In a real app, you'd show a confirmation modal here
-  if (confirm(`Are you sure you want to delete "${project.title}"?`)) {
-    deleteProject(project.id);
-  }
-};
-
-const deleteProject = async (projectId: string) => {
+const confirmDelete = async (project: GameProject) => {
+  if (!confirm(`Are you sure you want to delete "${project.title}"?`)) return;
   try {
-    // In a real app, this would call the API
-    projects.value = projects.value.filter(p => p.id !== projectId);
+    const { $supabase } = useNuxtApp();
+    const { error: err } = await ($supabase as any).from('game_projects').delete().eq('id', project.id);
+    if (err) throw err;
+    projects.value = projects.value.filter(p => p.id !== project.id);
   } catch (err) {
-    console.error('Error deleting project:', err);
     error.value = 'Failed to delete project';
   }
 };
 
-// Load data on mount
 onMounted(() => {
   loadProjects();
 });
