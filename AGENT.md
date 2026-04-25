@@ -35,13 +35,9 @@ Nuxt 3, Vue 3 Composition API, TypeScript, Pinia, Supabase, Tailwind CSS, date-f
 
 ## Known incomplete areas — prioritize these
 
-- `pages/community.vue` — entirely hardcoded mock data (categories, posts, stats). `useCommunityStore()` exists with full Supabase actions but is NOT used anywhere in the page. The store has `fetchCategories`, `fetchPosts`, `fetchPopularPosts` — none are called
-- `pages/community.vue` — "New Post" button and search input have no handlers wired
-- `pages/community.vue` — "Join Community" button does nothing
-- `pages/community.vue` — pagination buttons are static with no logic
-- `pages/livestreams.vue` — "Notify Me" email input/button has no submit handler
-- `pages/dashboard.vue` — loads mock projects via `setTimeout` instead of calling `projectsStore.fetchProjects()`
-- `pages/dashboard.vue` — delete confirmation uses native `confirm()` dialog, `showDeleteModal` ref is set but modal UI doesn't exist
-- `pages/discover.vue` — loads mock projects via `setTimeout` instead of calling `projectsStore.fetchProjects()`
-- `components/GameStreamPlayer.vue` — player UI likely exists but play/pause controls may not call `usePlayerStore()` actions
-- `pages/projects/[id].vue` — detail page exists but follow/like buttons may not be wired to store actions
+- `pages/dashboard.vue` — delete confirmation still uses native `confirm()` dialog; a modal UI would be preferable
+- `components/GameStreamPlayer.vue` — player UI exists and play/pause calls `usePlayerStore()` actions, but there is no real media element connected to `streamUrl`/`clipUrl`; the player is purely UI state
+- `pages/projects/[id].vue` — follow/like state is local only; not persisted to Supabase (optimistic only, no rollback)
+- `pages/livestreams.vue` — `stream_notifications` table must exist in Supabase for the notify-me form to work; duplicate emails return a 23505 error which is handled gracefully
+- `pages/about.vue` — contact form submits nowhere (no handler on the submit button)
+- `pages/help.vue` — "Contact via Email" and "Start Live Chat" buttons have no handlers

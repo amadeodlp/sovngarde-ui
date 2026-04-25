@@ -69,17 +69,64 @@
           We'll send you an email as soon as it's ready.
         </p>
         
-        <div class="flex gap-3">
+        <div v-if="notifySuccess" class="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+          You're on the list! We'll notify you when streaming launches.
+        </div>
+
+        <div v-if="notifyError" class="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          {{ notifyError }}
+        </div>
+        
+        <form @submit.prevent="submitNotify" class="flex gap-3">
           <input 
+            v-model="notifyEmail"
             type="email" 
             placeholder="Your email address" 
             class="input flex-1"
+            required
           />
-          <button class="btn btn-primary whitespace-nowrap">
-            Notify Me
+          <button type="submit" class="btn btn-primary whitespace-nowrap" :disabled="notifyLoading">
+            {{ notifyLoading ? 'Sending...' : 'Notify Me' }}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const notifyEmail = ref('');
+const notifyLoading = ref(false);
+const notifySuccess = ref(false);
+const notifyError = ref('');
+
+const submitNotify = async () => {
+  if (!notifyEmail.value) return;
+  notifyLoading.value = true;
+  notifyError.value = '';
+  notifySuccess.value = false;
+  try {
+    const { $supabase } = useNuxtApp();
+    const { error } = await ($supabase as any)
+      .from('stream_notifications')
+      .insert({ email: notifyEmail.value });
+    if (error) {
+      if (error.code === '23505') {
+        notifySuccess.value = true;
+        notifyEmail.value = '';
+      } else {
+        throw error;
+      }
+    } else {
+      notifySuccess.value = true;
+      notifyEmail.value = '';
+    }
+  } catch {
+    notifyError.value = 'Something went wrong. Please try again.';
+  } finally {
+    notifyLoading.value = false;
+  }
+};
+</script>
