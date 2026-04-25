@@ -55,7 +55,9 @@
           </div>
           
           <div class="mt-6">
-            <button class="btn btn-primary w-full">Join Community</button>
+            <button @click="joinCommunity" class="btn btn-primary w-full">
+              {{ joinedCommunity ? 'Joined ✓' : 'Join Community' }}
+            </button>
           </div>
         </div>
       </div>
@@ -78,18 +80,51 @@
           <div class="flex space-x-4 w-full md:w-auto">
             <div class="relative flex-1 md:flex-none">
               <input 
+                v-model="searchQuery"
                 type="text" 
                 placeholder="Search discussions..." 
                 class="input pr-10 w-full md:w-64"
+                @keyup.enter="handleSearch"
               />
-              <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white">
+              <button @click="handleSearch" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
             </div>
             
-            <button class="btn btn-primary">New Post</button>
+            <button @click="openNewPostModal" class="btn btn-primary">New Post</button>
+          </div>
+        </div>
+
+        <!-- New Post Modal -->
+        <div v-if="showNewPostModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div class="card p-8 w-full max-w-lg mx-4">
+            <h2 class="text-xl font-bold text-white mb-4">New Post</h2>
+            <div v-if="newPostError" class="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              {{ newPostError }}
+            </div>
+            <div class="mb-4">
+              <label class="block text-white font-medium mb-1">Title</label>
+              <input v-model="newPostTitle" type="text" class="input w-full" placeholder="Post title..." />
+            </div>
+            <div class="mb-4">
+              <label class="block text-white font-medium mb-1">Category</label>
+              <select v-model="newPostCategoryId" class="input w-full">
+                <option value="" disabled>Select a category</option>
+                <option v-for="cat in communityStore.categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+              </select>
+            </div>
+            <div class="mb-6">
+              <label class="block text-white font-medium mb-1">Content</label>
+              <textarea v-model="newPostContent" class="input w-full h-32 resize-none" placeholder="Write your post..."></textarea>
+            </div>
+            <div class="flex justify-end gap-3">
+              <button @click="showNewPostModal = false" class="btn btn-outline">Cancel</button>
+              <button @click="submitNewPost" class="btn btn-primary" :disabled="newPostLoading">
+                {{ newPostLoading ? 'Posting...' : 'Post' }}
+              </button>
+            </div>
           </div>
         </div>
         
@@ -150,7 +185,7 @@
           </div>
           
           <div class="space-y-4">
-            <div v-for="post in filteredRecentPosts" :key="post.id" class="card p-5 hover:border-primary/30 transition-colors">
+            <div v-for="post in paginatedPosts" :key="post.id" class="card p-5 hover:border-primary/30 transition-colors">
               <div class="flex items-start">
                 <div class="hidden sm:block h-10 w-10 rounded-full bg-neutral-800 flex-shrink-0 mr-4">
                   <div class="h-full w-full flex items-center justify-center">
@@ -180,21 +215,33 @@
           </div>
           
           <!-- Pagination -->
-          <div class="flex justify-center mt-8">
+          <div v-if="totalPages > 1" class="flex justify-center mt-8">
             <div class="flex space-x-1">
-              <button class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800">
+              <button
+                @click="goToPage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               
-              <button class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 bg-primary text-white">1</button>
-              <button class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800">2</button>
-              <button class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800">3</button>
-              <button class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800">4</button>
-              <button class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800">5</button>
+              <button
+                v-for="page in totalPages"
+                :key="page"
+                @click="goToPage(page)"
+                class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800"
+                :class="{ 'bg-primary text-white border-primary': currentPage === page }"
+              >
+                {{ page }}
+              </button>
               
-              <button class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800">
+              <button
+                @click="goToPage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                class="h-9 w-9 flex items-center justify-center rounded-md border border-white/10 text-white/80 hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
@@ -210,14 +257,47 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useCommunityStore } from '~/stores/community';
+import { useAuthStore } from '~/stores/auth';
 
 const communityStore = useCommunityStore();
+const authStore = useAuthStore();
+
 const activeCategoryId = ref<string | null>(null);
 const memberCount = ref(0);
+const joinedCommunity = ref(false);
+const searchQuery = ref('');
+const currentPage = ref(1);
+const postsPerPage = 10;
+
+const showNewPostModal = ref(false);
+const newPostTitle = ref('');
+const newPostContent = ref('');
+const newPostCategoryId = ref('');
+const newPostLoading = ref(false);
+const newPostError = ref('');
 
 const totalPostCount = computed(() =>
   communityStore.categories.reduce((sum, c) => sum + (c.post_count || 0), 0)
 );
+
+const filteredRecentPosts = computed(() => {
+  let posts = communityStore.regularPosts;
+  if (activeCategoryId.value) {
+    posts = posts.filter(p => p.category_id === activeCategoryId.value);
+  }
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase();
+    posts = posts.filter(p => p.title.toLowerCase().includes(q));
+  }
+  return posts;
+});
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredRecentPosts.value.length / postsPerPage)));
+
+const paginatedPosts = computed(() => {
+  const start = (currentPage.value - 1) * postsPerPage;
+  return filteredRecentPosts.value.slice(start, start + postsPerPage);
+});
 
 const getInitials = (name: string): string => {
   if (!name) return '';
@@ -234,11 +314,13 @@ const formatDate = (dateString: string): string => {
 
 const selectCategory = (id: string) => {
   activeCategoryId.value = id;
+  currentPage.value = 1;
   communityStore.fetchPosts(id);
 };
 
 const clearCategoryFilter = () => {
   activeCategoryId.value = null;
+  currentPage.value = 1;
   communityStore.fetchPosts();
 };
 
@@ -246,17 +328,61 @@ const getCategoryName = (id: string): string => {
   return communityStore.categories.find(c => c.id === id)?.name || '';
 };
 
-const filteredRecentPosts = computed(() => {
-  if (!activeCategoryId.value) return communityStore.regularPosts;
-  return communityStore.regularPosts.filter(p => p.category_id === activeCategoryId.value);
-});
+const handleSearch = () => {
+  currentPage.value = 1;
+};
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const joinCommunity = () => {
+  if (!authStore.isAuthenticated) {
+    navigateTo('/login?redirect=/community');
+    return;
+  }
+  joinedCommunity.value = true;
+};
+
+const openNewPostModal = () => {
+  if (!authStore.isAuthenticated) {
+    navigateTo('/login?redirect=/community');
+    return;
+  }
+  newPostTitle.value = '';
+  newPostContent.value = '';
+  newPostCategoryId.value = activeCategoryId.value || '';
+  newPostError.value = '';
+  showNewPostModal.value = true;
+};
+
+const submitNewPost = async () => {
+  if (!newPostTitle.value.trim() || !newPostContent.value.trim() || !newPostCategoryId.value) {
+    newPostError.value = 'Please fill in all fields.';
+    return;
+  }
+  newPostLoading.value = true;
+  newPostError.value = '';
+  const result = await communityStore.createPost({
+    title: newPostTitle.value.trim(),
+    content: newPostContent.value.trim(),
+    category_id: newPostCategoryId.value,
+  });
+  newPostLoading.value = false;
+  if (result.success) {
+    showNewPostModal.value = false;
+  } else {
+    newPostError.value = result.error || 'Failed to create post.';
+  }
+};
 
 onMounted(async () => {
   await Promise.all([
     communityStore.fetchCategories(),
     communityStore.fetchPosts(),
   ]);
-  // fetch real member count
   const { $supabase } = useNuxtApp();
   const { count } = await ($supabase as any)
     .from('profiles')
