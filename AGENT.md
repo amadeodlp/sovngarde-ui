@@ -39,5 +39,12 @@ Nuxt 3, Vue 3 Composition API, TypeScript, Pinia, Supabase, Tailwind CSS, date-f
 - `components/GameStreamPlayer.vue` — player UI exists and play/pause calls `usePlayerStore()` actions, but there is no real media element connected to `streamUrl`/`clipUrl`; the player is purely UI state
 - `pages/projects/[id].vue` — follow/like state is local only; not persisted to Supabase (optimistic only, no rollback)
 - `pages/livestreams.vue` — `stream_notifications` table must exist in Supabase for the notify-me form to work; duplicate emails return a 23505 error which is handled gracefully
-- `pages/about.vue` — contact form submits nowhere (no handler on the submit button)
-- `pages/help.vue` — "Contact via Email" and "Start Live Chat" buttons have no handlers
+- `pages/help.vue` — "Start Live Chat" button now navigates to `/community`; live chat is not a real feature
+- `pages/reset-password` — no reset-password page exists yet; the forgot-password flow sends users to `/reset-password` which returns a 404
+
+## Discovered issues
+
+- `pages/reset-password` route is missing — Supabase password reset redirects to `/reset-password` but that page does not exist in `pages/`
+- `TheNavigation.vue` — `/profile` route linked in the user dropdown does not exist as a page
+- `pages/login.vue` and `pages/signup.vue` — OAuth buttons (GitHub, Google, Facebook) render but have no click handlers
+- `pages/projects/[id].vue` — screenshots section uses `picsum.photos` placeholder URLs instead of real project media

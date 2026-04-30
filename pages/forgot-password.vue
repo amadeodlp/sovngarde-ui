@@ -63,31 +63,27 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-// Form data
 const email = ref('');
 const isLoading = ref(false);
 const error = ref('');
 const successMessage = ref('');
 
-// Handle password recovery
 const recoverPassword = async () => {
   isLoading.value = true;
   error.value = '';
   successMessage.value = '';
-  
   try {
-    // For demo purposes, simulate API call with a timeout
-    setTimeout(() => {
-      // In a real app, this would call a password recovery service
-      
-      // Show success message
-      successMessage.value = 'Recovery instructions have been sent to your email address.';
-      email.value = '';
-      isLoading.value = false;
-    }, 1500);
-  } catch (err) {
-    console.error('Password recovery error:', err);
-    error.value = 'An error occurred. Please try again.';
+    const { $supabase } = useNuxtApp();
+    const { error: err } = await ($supabase as any).auth.resetPasswordForEmail(
+      email.value,
+      { redirectTo: `${window.location.origin}/reset-password` }
+    );
+    if (err) throw err;
+    successMessage.value = 'Recovery instructions have been sent to your email address.';
+    email.value = '';
+  } catch (err: any) {
+    error.value = err.message || 'An error occurred. Please try again.';
+  } finally {
     isLoading.value = false;
   }
 };

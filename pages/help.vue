@@ -10,11 +10,13 @@
       <div class="max-w-xl mx-auto mt-8">
         <div class="relative">
           <input 
+            v-model="helpSearch"
             type="text" 
             placeholder="Search for help..." 
             class="input pr-10 w-full"
+            @keyup.enter="scrollToFaq"
           />
-          <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white">
+          <button @click="scrollToFaq" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -33,7 +35,7 @@
         </div>
         <h3 class="text-xl font-bold text-white mb-2">Account & Profile</h3>
         <p class="text-white/70 mb-4">Managing your account, profile settings, and login issues.</p>
-        <button class="text-primary hover:text-primary/80">View FAQs →</button>
+        <button @click="openQuestion(4)" class="text-primary hover:text-primary/80">View FAQs →</button>
       </div>
       
       <div class="card p-6 text-center hover:border-primary/30 transition-colors">
@@ -44,7 +46,7 @@
         </div>
         <h3 class="text-xl font-bold text-white mb-2">Projects & Uploads</h3>
         <p class="text-white/70 mb-4">Creating and managing game projects, uploading media, and sharing updates.</p>
-        <button class="text-primary hover:text-primary/80">View FAQs →</button>
+        <button @click="openQuestion(1)" class="text-primary hover:text-primary/80">View FAQs →</button>
       </div>
       
       <div class="card p-6 text-center hover:border-primary/30 transition-colors">
@@ -55,12 +57,12 @@
         </div>
         <h3 class="text-xl font-bold text-white mb-2">Live Streaming</h3>
         <p class="text-white/70 mb-4">Setting up and managing live streams, technical requirements, and best practices.</p>
-        <button class="text-primary hover:text-primary/80">View FAQs →</button>
+        <button @click="openQuestion(3)" class="text-primary hover:text-primary/80">View FAQs →</button>
       </div>
     </div>
     
     <!-- Popular FAQs -->
-    <div class="card p-8 mb-12">
+    <div class="card p-8 mb-12" id="faq-section">
       <h2 class="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
       
       <div class="space-y-4">
@@ -175,7 +177,7 @@
     </div>
     
     <!-- Contact Support -->
-    <div class="card p-8">
+    <div class="card p-8" id="contact-support">
       <div class="text-center mb-8">
         <h2 class="text-2xl font-bold text-white mb-3">Still Need Help?</h2>
         <p class="text-white/70 max-w-2xl mx-auto">
@@ -192,7 +194,7 @@
           </div>
           <h3 class="text-xl font-bold text-white mb-2">Email Support</h3>
           <p class="text-white/70 mb-4">Send us a detailed message and we'll get back to you within 24 hours.</p>
-          <button class="btn btn-primary">Contact via Email</button>
+          <a href="mailto:amadeodlp@hotmail.com?subject=SovnGarde%20Support" class="btn btn-primary">Contact via Email</a>
         </div>
         
         <div class="text-center p-6 bg-neutral-900 rounded-xl">
@@ -203,7 +205,7 @@
           </div>
           <h3 class="text-xl font-bold text-white mb-2">Live Chat</h3>
           <p class="text-white/70 mb-4">Chat with our support team in real-time during business hours.</p>
-          <button class="btn btn-primary">Start Live Chat</button>
+          <NuxtLink to="/community" class="btn btn-primary">Start Live Chat</NuxtLink>
         </div>
       </div>
     </div>
@@ -214,12 +216,20 @@
 import { ref } from 'vue';
 
 const activeQuestion = ref<number | null>(null);
+const helpSearch = ref('');
 
 const toggle = (id: number) => {
-  if (activeQuestion.value === id) {
-    activeQuestion.value = null;
-  } else {
-    activeQuestion.value = id;
-  }
+  activeQuestion.value = activeQuestion.value === id ? null : id;
+};
+
+const openQuestion = (id: number) => {
+  activeQuestion.value = id;
+  const el = document.getElementById('faq-section');
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
+
+const scrollToFaq = () => {
+  const el = document.getElementById('faq-section');
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
 };
 </script>
