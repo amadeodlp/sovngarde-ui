@@ -107,7 +107,7 @@
     </div>
     
     <!-- Contact section -->
-    <div class="card p-8">
+    <div class="card p-8" id="contact">
       <h2 class="text-3xl font-bold text-white mb-6">Contact Me</h2>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -158,20 +158,23 @@
         </div>
         
         <div>
-          <form class="space-y-4">
+          <div v-if="submitSuccess" class="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+            Your message has been sent! I'll get back to you soon.
+          </div>
+          <form class="space-y-4" @submit.prevent="sendMessage">
             <div>
               <label for="name" class="block text-white font-medium mb-2">Name</label>
-              <input type="text" id="name" class="input w-full" />
+              <input type="text" id="name" v-model="form.name" class="input w-full" required />
             </div>
             
             <div>
               <label for="email" class="block text-white font-medium mb-2">Email</label>
-              <input type="email" id="email" class="input w-full" />
+              <input type="email" id="email" v-model="form.email" class="input w-full" required />
             </div>
             
             <div>
               <label for="message" class="block text-white font-medium mb-2">Message</label>
-              <textarea id="message" rows="4" class="input w-full resize-none"></textarea>
+              <textarea id="message" v-model="form.message" rows="4" class="input w-full resize-none" required></textarea>
             </div>
             
             <button type="submit" class="btn btn-primary w-full">Send Message</button>
@@ -181,3 +184,20 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const submitSuccess = ref(false);
+const form = ref({ name: '', email: '', message: '' });
+
+const sendMessage = () => {
+  const subject = encodeURIComponent('SovnGarde Contact Form');
+  const body = encodeURIComponent(
+    `Name: ${form.value.name}\nEmail: ${form.value.email}\n\n${form.value.message}`
+  );
+  window.location.href = `mailto:amadeodlp@hotmail.com?subject=${subject}&body=${body}`;
+  submitSuccess.value = true;
+  form.value = { name: '', email: '', message: '' };
+};
+</script>
